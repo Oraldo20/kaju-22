@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Joguinho Fofo - Pronto para publicar</title>
+<style>
+  :root{
+    --pink-bg:#ffdff0;
+    --accent:#ff6fa3;
+    --card:rgba(255,255,255,0.9);
+  }
+  *{box-sizing:border-box;font-family: "Segoe UI", Arial, sans-serif}
+  html,body{height:100%;margin:0;background:var(--pink-bg);overflow:hidden}
+  .scene{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+
+  /* Fundo flutuante (tartarugas e corações) mantido */
+  .float-emoji{position:absolute;font-size:28px;opacity:0.95;pointer-events:none}
+  @keyframes floatUp {
+    0%{transform:translateY(110vh) rotate(0) scale(0.7);opacity:0}
+    10%{opacity:1}
+    100%{transform:translateY(-20vh) rotate(360deg) scale(1.1);opacity:0}
+  }
+
+  /* container de telas */
+  .screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .card{
+    background:var(--card);
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.12);
+    text-align:center;
+    max-width:920px;
+    width:92%;
+  }
+
+  h1{color:var(--accent);margin:0 0 10px 0;font-size:2.1rem}
+  .btn{
+    background:var(--accent);color:white;border:none;padding:12px 18px;border-radius:14px;font-weight:700;
+    cursor:pointer;margin-top:12px;box-shadow:0 6px 18px rgba(0,0,0,0.12);
+    transition:transform 0.15s, box-shadow 0.15s;
+  }
+  .btn:hover{
+    transform: translateY(-2px);
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+  }
+  .small{font-size:0.95rem;color:#333;margin-top:8px}
+
+  /* area do minigame */
+  #minigameArea{height:420px;position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(180deg,#fff 0%, #fff7fb 100%);padding:12px}
+  .instr{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-weight:700;color:#b0356b;background:rgba(255,255,255,0.6);padding:6px 10px;border-radius:10px;z-index:20}
+
+  /* corações pop */
+  .pop-heart{
+    position:absolute; font-size:34px; cursor:pointer;
+    transition:transform 0.12s ease, opacity 0.2s ease;
+    user-select:none;
+    z-index:30;
+  }
+
+  /* resultado final e caixas - RESULTADO 1 CENTRALIZADO */
+  /* Ajuste: min-height para garantir que a mensagem ocupe o centro visualmente */
+  .resultBox{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    min-height: 400px; /* Garante que a área do resultado ocupe bastante espaço */
+  }
+  
+  /* REMOVIDO: .gifResult { display: none; } */
+
+  /* MENSAGENS ESPECIAIS MAIORES E MAIS DESTACADAS */
+  .messageBox{
+    background:linear-gradient(180deg,#ffebf4,#ffd9e6); /* Fundo mais destacado */
+    padding:16px 20px; /* Mais padding */
+    border-radius:12px;
+    color:#8a2f5f;
+    max-width:90%; /* Ajustado para deixar margem */
+    width: auto;
+    font-weight:700; /* Mais peso */
+    font-size:1.2rem; /* Fonte maior para destaque */
+    border:2px solid #ff9ccf; /* Borda suave */
+    text-align: center; /* Centraliza o texto */
+  }
+
+  /* Estilo para centralizar o coração no Minigame 1 */
+  #heartUnderMessage {
+    font-size: 2.5rem;
+    margin-top: 5px;
+  }
+  
+  /* Estilo para a mensagem de acerto no Quiz */
+  .quiz-success-msg{
+    font-size:1.2rem; /* Aumentado */
+    color:#008000;
+    font-weight:800;
+    padding:10px;
+    border-radius:8px;
+    background:rgba(144, 238, 144, 0.2);
+    margin-bottom:10px;
+    width:100%;
+    text-align: center; /* Centraliza o texto */
+  }
+
+  /* quiz */
+  .quiz-card{display:flex;flex-direction:column;gap:12px;align-items:center}
+  .qbox{background:linear-gradient(180deg,#fff 0,#fff1f6 100%);padding:14px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.08);width:100%}
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+  .ans-btn{background:#fff;border:2px solid #ffd9e6;padding:10px;border-radius:10px;cursor:pointer;transition:all 0.15s}
+  .ans-btn:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.06)}
+
+  /* drag minigame */
+  #dragArea{position:relative;height:360px;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#fffafc,#fff3f7)}
+  .drag-heart{position:absolute;font-size:40px;cursor:grab;user-select:none;z-index:30}
+  
+  /* CÍRCULO DE RECOMPENSA (TARGET) COM EFEITO DE PREENCHIMENTO */
+  .target{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%); 
+    width:150px;
+    height:150px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:3px dashed #ff9ccf;
+    background:rgba(255,255,255,0.6);
+    z-index:20;
+    overflow: hidden; 
+  }
+  .target p{margin:0;color:#c73d72;font-weight:800; z-index: 2;}
+
+  /* Camada de preenchimento */
+  .target-fill {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%; /* Inicia vazio */
+    background-color: rgba(255, 120, 170, 0.4); /* Cor do preenchimento */
+    transition: height 0.3s ease-out; /* Animação suave */
+    z-index: 1;
+  }
+
+  /* caixas com corações (estética das perguntas) */
+  .heart-frame{border-radius:12px;padding:10px;border:2px solid rgba(255,120,170,0.25);background:linear-gradient(180deg,#fff 0,#fff4f8 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.6)}
+
+  /* AJUSTE PARA MENSAGEM FINAL CENTRALIZADA */
+  #finalBox{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    padding:16px;
+  }
+  .restart-btn{background:#ff9ccf;color:white;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;margin-top:10px;transition:all 0.15s}
+  .restart-btn:hover{background:#ff8abf;transform:scale(1.03)}
+
+  @media (max-width:520px){
+    .messageBox{font-size:1rem;padding:12px}
+  }
+</style>
+</head>
+<body>
+
+<div class="scene">
+
+  <div id="screenIntro" class="screen">
+    <div class="card">
+      <h1>Para o meu kajuzinho 💖</h1>
+      <p class="small">Um joguinho feito com carinho — clique em começar para brincar!</p>
+      <button id="btnStart" class="btn">Começar</button>
+      <p class="small">Dica: cada fase tem um desafio diferente 💌</p>
+    </div>
+  </div>
+
+  <div id="screenGame1" class="screen" style="display:none">
+    <div class="card" style="max-width:760px">
+      <h1>Minigame 1</h1>
+      <div class="instr" id="instr1">Clique em <strong>8 corações</strong> que vão aparecer!</div>
+      <div id="minigameArea">
+        </div>
+
+      <div id="result1" class="resultBox" style="margin-top:14px; justify-content: center;">
+        <div class="messageBox" id="msg1"></div> 
+        <div id="heartUnderMessage">💖</div>
+        <button id="toQuiz" class="btn" style="display:none; margin-top: 20px;">Próximo</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screenQuiz" class="screen" style="display:none">
+    <div class="card" style="max-width:760px">
+      <h1>Quiz do Eduardo</h1>
+      <div class="quiz-card">
+        <div class="qbox heart-frame" id="questionBox">
+          </div>
+        <div id="quizMsg" style="min-height:54px; width:100%; display:flex; flex-direction:column; align-items:center"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="screenDrag" class="screen" style="display:none">
+    <div class="card" style="max-width:760px">
+      <h1>Último desafio</h1>
+      <p class="small">Arraste <strong>4 corações</strong> até o alvo central</p>
+      <div id="dragArea" style="margin-top:10px">
+        <div class="target">
+          <div id="targetFill" class="target-fill"></div>
+          <p>RECOMPENSA</p>
+        </div>
+        </div>
+      <div id="finalBox" style="margin-top:14px;" class="heart-frame">
+        <div class="messageBox" id="finalMsg">
+          </div>
+        <button id="restartFinal" class="restart-btn">Reiniciar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<audio id="popSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_dbe1e8c26f.mp3"></audio>
+
+<script>
+/* ---------- configuração do fundo flutuante (tartarugas e corações) ---------- */
+const EMOJIS = ['🐢','💖','💞','🩷'];
+const FLOAT_COUNT = 36; // mais frequente
+for(let i=0;i<FLOAT_COUNT;i++){
+  const e = document.createElement('div');
+  e.className = 'float-emoji';
+  e.textContent = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+  const left = Math.random()*100;
+  e.style.left = left + 'vw';
+  e.style.top = (80 + Math.random()*20) + 'vh'; // começam abaixo da tela
+  e.style.fontSize = (16 + Math.random()*30) + 'px';
+  e.style.animation = `floatUp ${(5 + Math.random()*6).toFixed(2)}s linear ${Math.random()*3}s infinite`;
+  document.body.appendChild(e);
+}
+
+/* ---------- navegação entre telas ---------- */
+const screenIntro = document.getElementById('screenIntro');
+const screenGame1 = document.getElementById('screenGame1');
+const screenQuiz = document.getElementById('screenQuiz');
+const screenDrag = document.getElementById('screenDrag');
+const btnStart = document.getElementById('btnStart');
+
+btnStart.addEventListener('click', ()=> {
+  screenIntro.style.display = 'none';
+  startGame1();
+  screenGame1.style.display = 'flex';
+});
+
+/* ---------- Minigame 1: clicar 8 corações que aparecem e somem ---------- */
+const minigameArea = document.getElementById('minigameArea');
+const instr1 = document.getElementById('instr1');
+const result1 = document.getElementById('result1');
+const toQuiz = document.getElementById('toQuiz');
+const popSound = document.getElementById('popSound');
+const heartUnderMessage = document.getElementById('heartUnderMessage');
+
+let targetClicks = 8;
+let currentClicks = 0;
+let spawnTimer = null;
+
+function startGame1(){
+  currentClicks = 0;
+  result1.style.display = 'none';
+  toQuiz.style.display = 'none';
+  // A área de jogo é limpa e exibida
+  minigameArea.style.display = 'block'; 
+  instr1.style.display = 'block';
+  heartUnderMessage.style.display = 'none'; // Esconde o coração no início
+  instr1.textContent = `Clique em ${targetClicks} corações que vão aparecer!`;
+  minigameArea.innerHTML = ''; // limpa
+  spawnHeartsLoop();
+}
+
+function spawnHeartsLoop(){
+  // cria novo coração entre ~350ms e 900ms (mais frequência)
+  spawnTimer = setInterval(()=> {
+    spawnHeart();
+  }, 350 + Math.random()*550);
+  // cria alguns iniciais
+  for(let i=0;i<4;i++) setTimeout(spawnHeart, i*220);
+}
+
+function spawnHeart(){
+  const h = document.createElement('div');
+  h.className = 'pop-heart';
+  h.textContent = '💗';
+  // posição aleatória dentro da área
+  const areaRect = minigameArea.getBoundingClientRect();
+  const w = areaRect.width, hgt = areaRect.height;
+  const x = Math.random()*(w-60) + 10;
+  const y = Math.random()*(hgt-80) + 40;
+  h.style.left = x + 'px';
+  h.style.top  = y + 'px';
+  h.style.opacity = '0';
+  minigameArea.appendChild(h);
+  // fade in
+  requestAnimationFrame(()=> { h.style.transition = 'opacity 0.18s'; h.style.opacity = '1'; });
+
+  // life time
+  const life = 800 + Math.random()*1400;
+  const tDisappear = setTimeout(()=> {
+    if(h.parentElement) h.remove();
+  }, life);
+
+  // click handler
+  h.addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    try{ popSound.currentTime = 0; popSound.play(); }catch(e){}
+    currentClicks++;
+    h.style.transform = 'scale(1.2)';
+    setTimeout(()=> { if(h.parentElement) h.remove(); },120);
+    instr1.textContent = `Corações coletados: ${currentClicks} / ${targetClicks}`;
+    if(currentClicks >= targetClicks){
+      clearInterval(spawnTimer);
+      document.querySelectorAll('.pop-heart').forEach(x=>x.remove());
+      showResult1();
+    }
+  });
+
+  // floating micro animation
+  const drift = (Math.random()-0.5)*18;
+  h.animate([{transform:'translateY(0px)'},{transform:`translateY(${drift}px)`}],{duration:700+Math.random()*600,iterations:Infinity,direction:'alternate'});
+}
+
+/* show result for minigame 1 */
+function showResult1(){
+  // Esconde a área do minigame para centralizar o resultado na área do cartão
+  minigameArea.style.display = 'none';
+  instr1.style.display = 'none';
+  
+  result1.style.display = 'flex';
+  toQuiz.style.display = 'inline-block';
+  heartUnderMessage.style.display = 'block'; // Mostra o coração
+  
+  // MENSAGEM PERSONALIZADA (MINIGAME 1)
+   document.getElementById('msg1').textContent = 'sempre vou estar ao seu lado kajuzinho, sempre vou ser aquela pessoa em que voce pode confiar então sempre que estiver passando por alguma coisa venha falar com o seu duzinho que eu vou sempre estar la para te ajudar de alguma forma, gosto muito de vc';
+}
+
+/* ir para o quiz */
+toQuiz.addEventListener('click', ()=> {
+  screenGame1.style.display = 'none';
+  startQuiz();
+  screenQuiz.style.display = 'flex';
+});
+
+/* ---------- Minigame 2: quiz de 3 perguntas ---------- */
+const quizData = [
+  {
+    q: "Qual o apelido que a Karol deu para o Eduardo?",
+    choices: ["du","eduardinho","dudu","duduzinho"],
+    correct: 0
+  },
+  {
+    q: "Qual o main do Eduardo no League of Legends?",
+    choices: ["ezreal","tristana","kalista","corki"],
+    correct: 3
+  },
+  {
+    q: "Quem é a pessoa favorita do Eduardo??",
+    choices: ["karol","kajuzinho","kaju","iameteeee"],
+    correct: -1 // todas certas (tratamos especial)
+  }
+];
+
+let quizIndex = 0;
+const questionBox = document.getElementById('questionBox');
+const quizMsg = document.getElementById('quizMsg');
+
+function startQuiz(){
+  quizIndex = 0;
+  showQuestion();
+}
+
+function showQuestion(){
+  quizMsg.innerHTML = '';
+  const q = quizData[quizIndex];
+  questionBox.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>Pergunta ${quizIndex+1} de ${quizData.length}</strong>
+    </div>
+    <div style="margin-top:8px">
+      <h3 style="color:#c43a6e;margin:0 0 8px 0">${q.q}</h3>
+      <div class="answers"></div>
+    </div>
+  `;
+  const answersDiv = questionBox.querySelector('.answers');
+  q.choices.forEach((ch, idx) => {
+    const b = document.createElement('button');
+    b.className = 'ans-btn';
+    b.innerHTML = `<div style="font-weight:700">${ch}</div>`;
+    b.addEventListener('click', ()=> handleAnswer(idx));
+    answersDiv.appendChild(b);
+  });
+}
+
+function handleAnswer(selectedIdx){
+  const q = quizData[quizIndex];
+  // Desabilita os botões para evitar cliques múltiplos
+  questionBox.querySelectorAll('.ans-btn').forEach(btn => btn.disabled = true);
+
+  if(q.correct === -1 || selectedIdx === q.correct){
+    // RESPOSTA CERTA
+    quizMsg.innerHTML = `
+      <div class="quiz-success-msg">parabéns!! vc acertou meu kajuzinho</div>
+      <button class="btn" id="contBtn">Continuar</button>
+    `;
+    document.getElementById('contBtn').addEventListener('click', ()=> nextQuizStep());
+  } else {
+    // RESPOSTA ERRADA
+    quizMsg.innerHTML = `
+      <div class="small" style="color:#b02a5a;font-weight:700;padding:10px;text-align:center;">Ops... você errou. Quer tentar novamente?</div>
+      <button class="btn" id="restartQuiz">Recomeçar</button>
+    `;
+    document.getElementById('restartQuiz').addEventListener('click', ()=> {
+      startQuiz();
+    });
+  }
+}
+
+function nextQuizStep(){
+  quizIndex++;
+  if(quizIndex >= quizData.length){
+    // MENSAGEM FINAL DO QUIZ ALTERADA
+    quizMsg.innerHTML = `
+      <div class="quiz-success-msg" style="background:rgba(255,160,190,0.2);">
+        voce conhece muito do eduardo!! ele é realmente seu duzinho, parabens!!!
+      </div>
+      <button class="btn" id="goToDrag">Próximo Minigame</button>
+    `;
+    document.getElementById('goToDrag').addEventListener('click', () => {
+        screenQuiz.style.display = 'none';
+        startDragGame();
+        screenDrag.style.display = 'flex';
+    });
+  } else {
+    showQuestion();
+  }
+}
+
+/* ---------- Minigame 3: arrastar corações até o centro ---------- */
+const dragArea = document.getElementById('dragArea');
+// targetFill é inicializado em startDragGame
+let dragged = null;
+let offsetX=0, offsetY=0;
+let succeededCount = 0;
+const totalHearts = 4;
+
+function startDragGame(){
+  dragArea.innerHTML = `
+    <div class="target">
+      <div id="targetFill" class="target-fill" style="height:0%;"></div>
+      <p>RECOMPENSA</p>
+    </div>`;
+  succeededCount = 0;
+  document.getElementById('finalBox').style.display = 'none'; // Esconde a mensagem final no início
+  
+  // Recria a referência ao targetFill
+  window.targetFill = dragArea.querySelector('#targetFill');
+  
+  // criar 4 corações espalhados
+  const areaW = dragArea.clientWidth || 720;
+  const areaH = dragArea.clientHeight || 360;
+  for(let i=0;i<totalHearts;i++){
+    const d = document.createElement('div');
+    d.className = 'drag-heart';
+    d.textContent = '💘';
+    // Posições com margem para não ficarem escondidos
+    d.style.left = (40 + Math.random()*(areaW-80)) + 'px';
+    d.style.top = (40 + Math.random()*(areaH-80)) + 'px';
+    dragArea.appendChild(d);
+    makeDraggable(d);
+  }
+}
+
+function updateTargetFill(){
+    const percentage = (succeededCount / totalHearts) * 100;
+    window.targetFill.style.height = `${percentage}%`;
+}
+
+function makeDraggable(el){
+  el.addEventListener('mousedown', startDrag);
+  el.addEventListener('touchstart', startDrag, {passive:false});
+  function startDrag(e){
+    e.preventDefault();
+    dragged = el;
+    const rect = el.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    offsetX = clientX - rect.left;
+    offsetY = clientY - rect.top;
+    el.style.cursor = 'grabbing';
+    // Adiciona o event listeners ao window para manter o arrasto
+    window.addEventListener('mousemove', onDrag);
+    window.addEventListener('touchmove', onDrag, {passive:false});
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('touchend', endDrag);
+  }
+  function onDrag(e){
+    if(!dragged) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const parentRect = dragArea.getBoundingClientRect();
+    let x = clientX - parentRect.left - offsetX;
+    let y = clientY - parentRect.top - offsetY;
+    // Limites de arrasto dentro da área
+    x = Math.max(0, Math.min(parentRect.width - 40, x));
+    y = Math.max(0, Math.min(parentRect.height - 40, y));
+    dragged.style.left = x + 'px';
+    dragged.style.top  = y + 'px';
+  }
+  function endDrag(){
+    if(!dragged) return;
+    const target = dragArea.querySelector('.target');
+    const tRect = target.getBoundingClientRect();
+    const dRect = dragged.getBoundingClientRect();
+    // Cálculo de sobreposição
+    const overlapX = Math.max(0, Math.min(dRect.right, tRect.right) - Math.max(dRect.left, tRect.left));
+    const overlapY = Math.max(0, Math.min(dRect.bottom, tRect.bottom) - Math.max(dRect.top, tRect.top));
+    const overlapArea = overlapX * overlapY;
+    // Critério de sucesso: 60% da área do coração sobrepõe o alvo
+    if(overlapArea > 0.6 * (dRect.width * dRect.height)){
+      dragged.remove();
+      succeededCount++;
+      // Animação de sucesso no target (sem deslocamento)
+      target.animate([{transform:'translate(-50%,-50%) scale(1)'},{transform:'translate(-50%,-50%) scale(1.1)'},{transform:'translate(-50%,-50%) scale(1)'}],{duration:300}); 
+      updateTargetFill(); // Atualiza o preenchimento
+      try{ popSound.currentTime = 0; popSound.play(); }catch(e){}
+      if(succeededCount >= totalHearts){
+        showFinalMessage();
+      }
+    }
+    dragged.style.cursor = 'grab';
+    dragged = null;
+    // Remove os event listeners
+    window.removeEventListener('mousemove', onDrag);
+    window.removeEventListener('touchmove', onDrag);
+    window.removeEventListener('mouseup', endDrag);
+    window.removeEventListener('touchend', endDrag);
+  }
+}
+
+/* mostrar mensagem final e botão reiniciar */
+function showFinalMessage(){
+  // Exibe o container final (que tem display:flex e alinhamento center no CSS)
+  document.getElementById('finalBox').style.display = 'flex';
+  // MENSAGEM FINAL DO JOGO
+   document.getElementById('finalMsg').textContent = 'fiz isso para voce ver o quao especial voce é para mim, sei que as coisas estão dificieis aí pq voce tem muitas coisas para fazer mas quero que saiba que estou torcendo por voce e esperando que voce termine logo para a gente ficar junto pq eu gosto de voce demais e quero muito conversar com voce pq voce me alegra, te adoro e boa sorte';
+}
+
+/* reiniciar todo o jogo para o início */
+document.getElementById('restartFinal').addEventListener('click', ()=>{
+  // reset all state and go to intro
+  // clear minigame timers and elements
+  clearInterval(spawnTimer);
+  document.querySelectorAll('.pop-heart').forEach(x=>x.remove());
+  minigameArea.innerHTML = '';
+  // Garante que o target e o fill são recriados corretamente
+  dragArea.innerHTML = `
+    <div class="target">
+      <div id="targetFill" class="target-fill" style="height:0%;"></div>
+      <p>RECOMPENSA</p>
+    </div>`;
+  screenDrag.style.display = 'none';
+  screenQuiz.style.display = 'none';
+  screenGame1.style.display = 'none';
+  screenIntro.style.display = 'flex';
+  currentClicks = 0;
+  window.targetFill = dragArea.querySelector('#targetFill'); // Atualiza a referência
+});
+
+/* segurança: on page resize we could adjust if needed */
+window.addEventListener('resize', ()=> {});
+</script>
+</body>
+</html>
