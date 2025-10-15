@@ -110,7 +110,8 @@
 
   /* drag minigame */
   #dragArea{position:relative;height:360px;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#fffafc,#fff3f7)}
-  .drag-heart{position:absolute;font-size:40px;cursor:grab;user-select:none;z-index:30}
+  /* AUMENTADO PARA FACILITAR O TOQUE NO CELULAR */
+  .drag-heart{position:absolute;font-size:60px;cursor:grab;user-select:none;z-index:30}
   
   /* CÍRCULO DE RECOMPENSA (TARGET) COM EFEITO DE PREENCHIMENTO */
   .target{
@@ -468,8 +469,7 @@ function startDragGame(){
   const areaW = dragArea.clientWidth || 720;
   const areaH = dragArea.clientHeight || 360;
 
-  // NOVAS ZONAS DE SPAWN MAIS PRÓXIMAS DO CENTRO (Entre 20% e 80% da área)
-  // Isso diminui o raio de aparição em 20% nas bordas
+  // ZONAS DE SPAWN MAIS PRÓXIMAS DO CENTRO (Entre 20% e 80% da área)
   const minX = areaW * 0.2;
   const maxX = areaW * 0.8;
   const minY = areaH * 0.2;
@@ -498,9 +498,9 @@ function updateTargetFill(){
 
 function makeDraggable(el){
   el.addEventListener('mousedown', startDrag);
-  el.addEventListener('touchstart', startDrag, {passive:false});
+  el.addEventListener('touchstart', startDrag, {passive:false}); // Adicionado passive:false
   function startDrag(e){
-    e.preventDefault();
+    e.preventDefault(); // Impede rolagem (scrolling) no celular durante o arrasto
     dragged = el;
     const rect = el.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -516,14 +516,18 @@ function makeDraggable(el){
   }
   function onDrag(e){
     if(!dragged) return;
+    e.preventDefault(); // Impede rolagem enquanto arrasta
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     const parentRect = dragArea.getBoundingClientRect();
     let x = clientX - parentRect.left - offsetX;
     let y = clientY - parentRect.top - offsetY;
-    // Limites de arrasto dentro da área
-    x = Math.max(0, Math.min(parentRect.width - 40, x));
-    y = Math.max(0, Math.min(parentRect.height - 40, y));
+    
+    // Limites de arrasto (ajustado para o novo tamanho do coração de 60px)
+    const heartSize = 60; // Tamanho em pixels (font-size)
+    x = Math.max(0, Math.min(parentRect.width - heartSize, x));
+    y = Math.max(0, Math.min(parentRect.height - heartSize, y));
+    
     dragged.style.left = x + 'px';
     dragged.style.top  = y + 'px';
   }
@@ -532,12 +536,14 @@ function makeDraggable(el){
     const target = dragArea.querySelector('.target');
     const tRect = target.getBoundingClientRect();
     const dRect = dragged.getBoundingClientRect();
+    
     // Cálculo de sobreposição
     const overlapX = Math.max(0, Math.min(dRect.right, tRect.right) - Math.max(dRect.left, tRect.left));
     const overlapY = Math.max(0, Math.min(dRect.bottom, tRect.bottom) - Math.max(dRect.top, tRect.top));
     const overlapArea = overlapX * overlapY;
-    // Critério de sucesso: 60% da área do coração sobrepõe o alvo
-    if(overlapArea > 0.6 * (dRect.width * dRect.height)){
+    
+    // CRITÉRIO DE SUCESSO MAIS LEVE PARA CELULAR: 40% de sobreposição
+    if(overlapArea > 0.4 * (dRect.width * dRect.height)){
       dragged.remove();
       succeededCount++;
       // Animação de sucesso no target (sem deslocamento)
