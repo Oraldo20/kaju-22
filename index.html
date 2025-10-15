@@ -59,30 +59,27 @@
   }
 
   /* resultado final e caixas - RESULTADO 1 CENTRALIZADO */
-  /* Ajuste: min-height para garantir que a mensagem ocupe o centro visualmente */
   .resultBox{
     display:none;
     flex-direction:column;
     align-items:center;
     justify-content:center;
     gap:12px;
-    min-height: 400px; /* Garante que a área do resultado ocupe bastante espaço */
+    min-height: 400px; 
   }
   
-  /* REMOVIDO: .gifResult { display: none; } */
-
   /* MENSAGENS ESPECIAIS MAIORES E MAIS DESTACADAS */
   .messageBox{
-    background:linear-gradient(180deg,#ffebf4,#ffd9e6); /* Fundo mais destacado */
-    padding:16px 20px; /* Mais padding */
+    background:linear-gradient(180deg,#ffebf4,#ffd9e6); 
+    padding:16px 20px; 
     border-radius:12px;
     color:#8a2f5f;
-    max-width:90%; /* Ajustado para deixar margem */
+    max-width:90%; 
     width: auto;
-    font-weight:700; /* Mais peso */
-    font-size:1.2rem; /* Fonte maior para destaque */
-    border:2px solid #ff9ccf; /* Borda suave */
-    text-align: center; /* Centraliza o texto */
+    font-weight:700; 
+    font-size:1.2rem; 
+    border:2px solid #ff9ccf; 
+    text-align: center; 
   }
 
   /* Estilo para centralizar o coração no Minigame 1 */
@@ -93,7 +90,7 @@
   
   /* Estilo para a mensagem de acerto no Quiz */
   .quiz-success-msg{
-    font-size:1.2rem; /* Aumentado */
+    font-size:1.2rem; 
     color:#008000;
     font-weight:800;
     padding:10px;
@@ -101,7 +98,7 @@
     background:rgba(144, 238, 144, 0.2);
     margin-bottom:10px;
     width:100%;
-    text-align: center; /* Centraliza o texto */
+    text-align: center; 
   }
 
   /* quiz */
@@ -141,9 +138,9 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 0%; /* Inicia vazio */
-    background-color: rgba(255, 120, 170, 0.4); /* Cor do preenchimento */
-    transition: height 0.3s ease-out; /* Animação suave */
+    height: 0%; 
+    background-color: rgba(255, 120, 170, 0.4); 
+    transition: height 0.3s ease-out; 
     z-index: 1;
   }
 
@@ -186,6 +183,7 @@
         </div>
 
       <div id="result1" class="resultBox" style="margin-top:14px; justify-content: center;">
+        
         <div class="messageBox" id="msg1"></div> 
         <div id="heartUnderMessage">💖</div>
         <button id="toQuiz" class="btn" style="display:none; margin-top: 20px;">Próximo</button>
@@ -469,13 +467,25 @@ function startDragGame(){
   // criar 4 corações espalhados
   const areaW = dragArea.clientWidth || 720;
   const areaH = dragArea.clientHeight || 360;
+
+  // NOVAS ZONAS DE SPAWN MAIS PRÓXIMAS DO CENTRO (Entre 20% e 80% da área)
+  // Isso diminui o raio de aparição em 20% nas bordas
+  const minX = areaW * 0.2;
+  const maxX = areaW * 0.8;
+  const minY = areaH * 0.2;
+  const maxY = areaH * 0.8;
+  
   for(let i=0;i<totalHearts;i++){
     const d = document.createElement('div');
     d.className = 'drag-heart';
     d.textContent = '💘';
-    // Posições com margem para não ficarem escondidos
-    d.style.left = (40 + Math.random()*(areaW-80)) + 'px';
-    d.style.top = (40 + Math.random()*(areaH-80)) + 'px';
+    
+    // Novo cálculo para aparecerem mais centrais 
+    const x = minX + Math.random() * (maxX - minX);
+    const y = minY + Math.random() * (maxY - minY);
+    
+    d.style.left = x + 'px';
+    d.style.top = y + 'px';
     dragArea.appendChild(d);
     makeDraggable(d);
   }
